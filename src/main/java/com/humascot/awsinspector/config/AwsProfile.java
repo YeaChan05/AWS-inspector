@@ -12,4 +12,5 @@ public class AwsProfile {
     private String privateIPAddress;
     private String accessKey;
     private String secretKey;
+    private String rdsInstanceID;
 }
