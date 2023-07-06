@@ -3,8 +3,7 @@ package com.humascot.awsinspector.service;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
 import com.amazonaws.services.cloudwatch.model.*;
 import com.amazonaws.services.ec2.AmazonEC2;
-import com.amazonaws.services.ec2.model.Instance;
-import com.amazonaws.services.ec2.model.Reservation;
+import com.amazonaws.services.ec2.model.*;
 import com.humascot.awsinspector.config.AwsConfig;
 import com.humascot.awsinspector.config.AwsProfile;
 import lombok.RequiredArgsConstructor;
@@ -39,29 +38,71 @@ public class Ec2Runner implements ApplicationRunner {
         List<Instance> runningInstances = getRunningInstance(ec2);
 //        String instanceId = runningInstances.getInstanceId();
 //        String instanceId= awsProfile.getInstanceID();
-    
+        
         runningInstances.stream().map(Instance::getInstanceId)
                 .filter(instanceId -> instanceId.equals(awsProfile.getInstanceID()))
                 .forEach(instanceId -> {
-            displayEc2CpuUtilization(amazonCloudWatch, instanceId);
-//            displayMemoryUtilization(amazonCloudWatch, instanceId);
-            displayNetworkPacketsIn(amazonCloudWatch, instanceId);
-            displayNetworkPacketsOut(amazonCloudWatch, instanceId);
-            displayCPUCreditUsage(amazonCloudWatch, instanceId);
-        });
+                    Dimension dimension = new Dimension()
+                            .withName("InstanceId")
+                            .withValue(instanceId);
+                    displayEc2CpuUtilization(amazonCloudWatch, dimension);
+                    displayMemoryUtilization(amazonCloudWatch, dimension);
+                    displayNetworkPacketsIn(amazonCloudWatch, dimension);
+                    displayNetworkPacketsOut(amazonCloudWatch, dimension);
+                    displayCPUCreditUsage(amazonCloudWatch, dimension);
+//                    displayEc2ConnectorsIP(ec2,instanceId);
+                });
         //            displayElbRequestCount(amazonCloudWatch);
         displayRdsCpuUtilization(amazonCloudWatch);
         System.out.println();
         getMetData(amazonCloudWatch);
+        
     }
+
+//    private static void displayEc2ConnectorsIP(AmazonEC2 ec2, String instanceId) {
+//        DescribeNetworkInterfacesRequest networkInterfacesRequest = new DescribeNetworkInterfacesRequest()
+//                .withFilters(new Filter("attachment.instance-id").withValues(instanceId));
+//
+//        DescribeNetworkInterfacesResult networkInterfacesResult = ec2.describeNetworkInterfaces(networkInterfacesRequest);
+//        List<NetworkInterface> networkInterfaces = networkInterfacesResult.getNetworkInterfaces();
+//
+//        // EC2 인스턴스에 연결된 IP 주소 출력
+//        for (NetworkInterface networkInterface : networkInterfaces) {
+//            List<GroupIdentifier> securityGroups = networkInterface.getGroups();
+//            List<NetworkInterfaceIpv6Address> ipv6Addresses = networkInterface.getIpv6Addresses();
+//            List<NetworkInterfacePrivateIpAddress> privateIpAddresses = networkInterface.getPrivateIpAddresses();
+//            List<NetworkInterfacePrivateIpAddress> association = networkInterface.getPrivateIpAddresses();
+//
+//            // IPv4 주소 출력
+//            for (NetworkInterfacePrivateIpAddress privateIp : association) {
+//                System.out.println("IPv4 Address: " + privateIp.getPrivateIpAddress());
+//            }
+//
+//            // IPv6 주소 출력
+//            for (NetworkInterfaceIpv6Address ipv6 : ipv6Addresses) {
+//                System.out.println("IPv6 Address: " + ipv6.getIpv6Address());
+//            }
+//
+//            // 보안 그룹 출력
+//            for (GroupIdentifier securityGroup : securityGroups) {
+//                System.out.println("Security Group: " + securityGroup.getGroupId());
+//            }
+//
+//            // Private IP 주소 출력
+//            for (NetworkInterfacePrivateIpAddress privateIpAddress : privateIpAddresses) {
+//                System.out.println("Private IP Address: " + privateIpAddress.getPrivateIpAddress());
+//            }
+//
+//            System.out.println();
+//        }
+//    }
+//
     
-    private void displayCPUCreditUsage(AmazonCloudWatch amazonCloudWatch, String instanceId) {
+    private void displayCPUCreditUsage(AmazonCloudWatch amazonCloudWatch, Dimension dimension) {
         String networkMetricName = "CPUCreditUsage";
         GetMetricStatisticsRequest networkRequest = new GetMetricStatisticsRequest()
                 .withNamespace("AWS/EC2")
-                .withDimensions(new Dimension()
-                        .withName("InstanceId")
-                        .withValue(instanceId))
+                .withDimensions(dimension)
                 .withMetricName(networkMetricName)
                 .withStatistics("Sum")
                 .withPeriod(60) // 통계의 간격 (초)
@@ -75,13 +116,11 @@ public class Ec2Runner implements ApplicationRunner {
         });
     }
     
-    private void displayNetworkPacketsIn(AmazonCloudWatch amazonCloudWatch, String instanceId) {
+    private void displayNetworkPacketsIn(AmazonCloudWatch amazonCloudWatch, Dimension dimension) {
         String networkMetricName = "NetworkPacketsIn";
         GetMetricStatisticsRequest networkRequest = new GetMetricStatisticsRequest()
                 .withNamespace("AWS/EC2")
-                .withDimensions(new Dimension()
-                        .withName("InstanceId")
-                        .withValue(instanceId))
+                .withDimensions(dimension)
                 .withMetricName(networkMetricName)
                 .withStatistics("Sum")
                 .withPeriod(60) // 통계의 간격 (초)
@@ -95,13 +134,11 @@ public class Ec2Runner implements ApplicationRunner {
         });
     }
     
-    private void displayNetworkPacketsOut(AmazonCloudWatch amazonCloudWatch, String instanceId) {
+    private void displayNetworkPacketsOut(AmazonCloudWatch amazonCloudWatch, Dimension dimension) {
         String networkMetricName = "NetworkPacketsOut";
         GetMetricStatisticsRequest networkRequest = new GetMetricStatisticsRequest()
                 .withNamespace("AWS/EC2")
-                .withDimensions(new Dimension()
-                        .withName("InstanceId")
-                        .withValue(instanceId))
+                .withDimensions(dimension)
                 .withMetricName(networkMetricName)
                 .withStatistics("Sum")
                 .withPeriod(60) // 통계의 간격 (초)
@@ -109,7 +146,6 @@ public class Ec2Runner implements ApplicationRunner {
                 .withEndTime(Date.from(Instant.now())); // 현재까지
         GetMetricStatisticsResult networkResult = amazonCloudWatch.getMetricStatistics(networkRequest);
         networkResult.getDatapoints().forEach(dataPoint -> {
-            System.out.println("Instance ID: " + instanceId);
             System.out.println("Network Packets Out: " + dataPoint.getSum());
             System.out.println("Timestamp: " + dataPoint.getTimestamp());
             System.out.println();
@@ -117,7 +153,7 @@ public class Ec2Runner implements ApplicationRunner {
     }
     
     private void displayRdsCpuUtilization(AmazonCloudWatch amazonCloudWatch) {
-        GetMetricStatisticsRequest rdsRequest =new GetMetricStatisticsRequest()
+        GetMetricStatisticsRequest rdsRequest = new GetMetricStatisticsRequest()
                 .withNamespace("AWS/RDS")
                 .withDimensions(new Dimension()
                         .withName("DBInstanceIdentifier")
@@ -130,7 +166,7 @@ public class Ec2Runner implements ApplicationRunner {
         
         GetMetricStatisticsResult rdsResult = amazonCloudWatch.getMetricStatistics(rdsRequest);
         List<Datapoint> rdsDataPoints = rdsResult.getDatapoints();
-    
+        
         System.out.println("RDS CPU Utilization:");
         for (Datapoint dataPoint : rdsDataPoints) {
             System.out.println("Timestamp: " + dataPoint.getTimestamp());
@@ -141,18 +177,18 @@ public class Ec2Runner implements ApplicationRunner {
     
     //    비용 청구됨
     private void displayElbRequestCount(AmazonCloudWatch amazonCloudWatch) {
-        GetMetricStatisticsRequest elbRequest =new  GetMetricStatisticsRequest()
+        GetMetricStatisticsRequest elbRequest = new GetMetricStatisticsRequest()
                 .withNamespace("AWS/ELB")
                 .withDimensions(new Dimension()
                         .withName("LoadBalancerName")
-                        .withValue("???")) // 로드 밸런서 이름을 변경하세요
+                        .withValue("???")) // 로드 밸런서 이름 변경
                 .withMetricName("RequestCount")
                 .withStatistics("Sum")
-                .withPeriod(300) // 통계의 간격 (초)
+                .withPeriod(60) // 통계의 간격 (초)
                 .withStartTime(Date.from(Instant.now().minusSeconds(600))) // 10분 전부터
                 .withEndTime(Date.from(Instant.now()));
-
-        GetMetricStatisticsResult elbResult= amazonCloudWatch.getMetricStatistics(elbRequest);
+        
+        GetMetricStatisticsResult elbResult = amazonCloudWatch.getMetricStatistics(elbRequest);
         System.out.println("ELB Request Count:");
         elbResult.getDatapoints().forEach(dataPoint -> {
             System.out.println("Timestamp: " + dataPoint.getTimestamp());
@@ -160,14 +196,13 @@ public class Ec2Runner implements ApplicationRunner {
         });
         System.out.println();
     }
-//    비용 청구됨
-    private void displayMemoryUtilization(AmazonCloudWatch amazonCloudWatch, String instanceId) {
+    
+    //    비용 청구됨
+    private void displayMemoryUtilization(AmazonCloudWatch amazonCloudWatch, Dimension dimension) {
         String memoryMetricName = "MemoryUtilization";
         GetMetricStatisticsRequest memoryRequest = new GetMetricStatisticsRequest()
                 .withNamespace("System/Linux")
-                .withDimensions(new Dimension()
-                        .withName("InstanceId")
-                        .withValue(instanceId))
+                .withDimensions(dimension)
                 .withMetricName(memoryMetricName)
                 .withStatistics("Average")
                 .withPeriod(60) // 통계의 간격 (초)
@@ -175,27 +210,23 @@ public class Ec2Runner implements ApplicationRunner {
                 .withEndTime(Date.from(Instant.now())); // 현재까지
         GetMetricStatisticsResult memoryResult = amazonCloudWatch.getMetricStatistics(memoryRequest);
         memoryResult.getDatapoints().forEach(dataPoint -> {
-            System.out.println("Instance ID: " + instanceId);
             System.out.println("Memory Utilization: " + dataPoint.getAverage());
             System.out.println("Timestamp: " + dataPoint.getTimestamp());
             System.out.println();
         });
     }
     
-    private void displayEc2CpuUtilization(AmazonCloudWatch amazonCloudWatch, String instanceId) {
+    private void displayEc2CpuUtilization(AmazonCloudWatch amazonCloudWatch, Dimension dimension) {
         String cpuMetricName = "CPUUtilization";
         GetMetricStatisticsRequest cpuRequest = new GetMetricStatisticsRequest()
                 .withNamespace("AWS/EC2")
-                .withDimensions(new Dimension()
-                        .withName("InstanceId")
-                        .withValue(instanceId))
+                .withDimensions(dimension)
                 .withMetricName(cpuMetricName)
                 .withStatistics("Average")
                 .withPeriod(60) // 통계의 간격 (초)
                 .withStartTime(Date.from(Instant.now().minusSeconds(600))) // 10분 전부터
                 .withEndTime(Date.from((Instant.now()))); // 현재까지
         GetMetricStatisticsResult cpuResult = amazonCloudWatch.getMetricStatistics(cpuRequest);
-        System.out.println("Instance ID: " + instanceId);
         cpuResult.getDatapoints().forEach(dataPoint -> {
             System.out.println("EC2 CPU Utilization: " + dataPoint.getAverage());
             System.out.println("Timestamp: " + dataPoint.getTimestamp());
@@ -212,29 +243,28 @@ public class Ec2Runner implements ApplicationRunner {
     }
     
     
-    public static void getMetData( AmazonCloudWatch amazonCloudWatch) {
+    public static void getMetData(AmazonCloudWatch amazonCloudWatch) {
         try {
-            // Set the date.
             Instant start = Instant.now().minusSeconds(600);
             Instant endDate = Instant.now();
-            Metric met =new Metric()
+            Metric met = new Metric()
                     .withMetricName("DiskReadBytes")
                     .withNamespace("AWS/EC2");
             
-            MetricStat metStat =new MetricStat()
+            MetricStat metStat = new MetricStat()
                     .withStat("Minimum")
                     .withPeriod(60)
                     .withMetric(met);
             
-            MetricDataQuery dataQUery = new MetricDataQuery()
+            MetricDataQuery dataQuery = new MetricDataQuery()
                     .withMetricStat(metStat)
                     .withId("foo2")
                     .withReturnData(true);
             
             List<MetricDataQuery> dq = new ArrayList<>();
-            dq.add(dataQUery);
+            dq.add(dataQuery);
             
-            GetMetricDataRequest getMetReq =new GetMetricDataRequest()
+            GetMetricDataRequest getMetReq = new GetMetricDataRequest()
                     .withMaxDatapoints(100)
                     .withStartTime(Date.from(start))
                     .withEndTime(Date.from(endDate))
