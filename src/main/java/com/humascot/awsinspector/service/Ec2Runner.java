@@ -36,8 +36,7 @@ public class Ec2Runner implements ApplicationRunner {
         AmazonCloudWatch amazonCloudWatch = awsConfig.cloudWatch();
         
         List<Instance> runningInstances = getRunningInstance(ec2);
-//        String instanceId = runningInstances.getInstanceId();
-//        String instanceId= awsProfile.getInstanceID();
+
         
         runningInstances.stream().map(Instance::getInstanceId)
                 .filter(instanceId -> instanceId.equals(awsProfile.getInstanceID()))
@@ -53,9 +52,8 @@ public class Ec2Runner implements ApplicationRunner {
 //                    displayEc2ConnectorsIP(ec2,instanceId);
                 });
         //            displayElbRequestCount(amazonCloudWatch);
-        displayRdsCpuUtilization(amazonCloudWatch);
         System.out.println();
-        getMetData(amazonCloudWatch);
+        getDiskReadBytes(amazonCloudWatch);
         
     }
 
@@ -152,28 +150,6 @@ public class Ec2Runner implements ApplicationRunner {
         });
     }
     
-    private void displayRdsCpuUtilization(AmazonCloudWatch amazonCloudWatch) {
-        GetMetricStatisticsRequest rdsRequest = new GetMetricStatisticsRequest()
-                .withNamespace("AWS/RDS")
-                .withDimensions(new Dimension()
-                        .withName("DBInstanceIdentifier")
-                        .withValue(awsProfile.getRdsInstanceID()))
-                .withMetricName("CPUUtilization")
-                .withStatistics("Average")
-                .withPeriod(60) // 통계의 간격 (초)
-                .withStartTime(Date.from(Instant.now().minusSeconds(600))) // 10분 전부터
-                .withEndTime(Date.from(Instant.now()));
-        
-        GetMetricStatisticsResult rdsResult = amazonCloudWatch.getMetricStatistics(rdsRequest);
-        List<Datapoint> rdsDataPoints = rdsResult.getDatapoints();
-        
-        System.out.println("RDS CPU Utilization:");
-        for (Datapoint dataPoint : rdsDataPoints) {
-            System.out.println("Timestamp: " + dataPoint.getTimestamp());
-            System.out.println("Average CPU Utilization: " + dataPoint.getAverage());
-            System.out.println();
-        }
-    }
     
     //    비용 청구됨
     private void displayElbRequestCount(AmazonCloudWatch amazonCloudWatch) {
@@ -243,7 +219,7 @@ public class Ec2Runner implements ApplicationRunner {
     }
     
     
-    public static void getMetData(AmazonCloudWatch amazonCloudWatch) {
+    public static void getDiskReadBytes(AmazonCloudWatch amazonCloudWatch) {
         try {
             Instant start = Instant.now().minusSeconds(600);
             Instant endDate = Instant.now();
@@ -276,6 +252,7 @@ public class Ec2Runner implements ApplicationRunner {
             for (MetricDataResult item : data) {
                 System.out.println("The label is " + item.getLabel());
                 System.out.println("The status code is " + item.getStatusCode());
+                System.out.println(" " + item.getStatusCode());
                 System.out.println(item.getValues());
             }
             
@@ -284,4 +261,6 @@ public class Ec2Runner implements ApplicationRunner {
             System.exit(1);
         }
     }
+    
+   
 }
