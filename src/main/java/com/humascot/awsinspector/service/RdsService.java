@@ -5,9 +5,7 @@ import com.amazonaws.services.cloudwatch.model.*;
 import com.humascot.awsinspector.config.AwsConfig;
 import com.humascot.awsinspector.config.AwsProfile;
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.ApplicationRunner;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -17,17 +15,16 @@ import java.util.List;
 
 /**
  * package :  com.humascot.awsinspector.service
- * fileName : RdsRunner
+ * fileName : RdsService
  * author :  ShinYeaChan
  * date : 2023-07-09
  */
-@Component
+@Service
 @RequiredArgsConstructor
-public class RdsRunner implements ApplicationRunner {
+public class RdsService {
     private final AwsConfig awsConfig;
     private final AwsProfile awsProfile;
-    @Override
-    public void run(ApplicationArguments args) throws Exception {
+    public void getRdsStatus() {
         AmazonCloudWatch amazonCloudWatch = awsConfig.cloudWatch();
         displayRdsCpuUtilization(amazonCloudWatch);
         displayLatency(amazonCloudWatch);
