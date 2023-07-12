@@ -1,5 +1,7 @@
 package com.humascot.awsinspector.dto.datapoints;
 
+import com.amazonaws.services.cloudwatch.model.Datapoint;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.util.ArrayList;
@@ -12,6 +14,7 @@ import java.util.List;
  * date : 2023-07-11
  */
 @Data
+@AllArgsConstructor(staticName = "of")
 public class Ec2CpuUtilization {
-    private List<DataPoint> dataPoints=new ArrayList<>();
+    private List<Datapoint> dataPoints=new ArrayList<>();
 }

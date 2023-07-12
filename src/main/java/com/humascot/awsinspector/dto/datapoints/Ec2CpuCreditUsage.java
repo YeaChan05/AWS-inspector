@@ -8,13 +8,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * package :  com.humascot.awsinspector.dto.datapoints
- * fileName : NetworkPacketsOut
+ * package :  com.humascot.awsinspector.dto
+ * fileName : Ec2CpuCreditUsage
  * author :  ShinYeaChan
  * date : 2023-07-11
  */
 @Data
 @AllArgsConstructor(staticName = "of")
-public class NetworkPacketsOut {
+public class Ec2CpuCreditUsage {
     private List<Datapoint> dataPoints=new ArrayList<>();
 }

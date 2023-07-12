@@ -8,7 +8,6 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConfigurationProperties(prefix = "gateway")
 public class AwsProfile {
-    private String instanceID;
     private String privateIPAddress;
     private String accessKey;
     private String secretKey;
