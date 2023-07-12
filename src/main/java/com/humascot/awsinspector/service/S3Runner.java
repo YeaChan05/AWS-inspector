@@ -25,6 +25,6 @@ public class S3Runner implements ApplicationRunner {
     public void run(ApplicationArguments args) throws Exception {
         AmazonS3 s3 = awsConfig.s3client();
         List<Bucket> buckets = s3.listBuckets();
-        buckets.forEach(System.out::println);
+//        buckets.forEach(System.out::println);
     }
 }
