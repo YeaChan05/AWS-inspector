@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -22,6 +23,7 @@ import java.util.List;
 @RestController
 @Slf4j
 @RequiredArgsConstructor
+@CrossOrigin("http://localhost:3000")
 public class CloudWatchController {
     private final Ec2Service ec2Service;
     @GetMapping("/dashboard")
