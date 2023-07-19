@@ -46,6 +46,7 @@ public class Ec2Service {
                     getDiskReadBytes(amazonCloudWatch)
             );
         }
+        dashboardDto.sort();
         return dashboardDto;
     }
     
@@ -62,8 +63,6 @@ public class Ec2Service {
         AmazonEC2 ec2 = awsConfig.ec2Client();
         
         List<Reservation> reservations = ec2.describeInstances().getReservations();
-        reservations.stream().flatMap(reservation -> reservation.getInstances().stream())
-                .forEach(System.out::println);
         return reservations.stream()
                 .flatMap(reservation -> reservation.getInstances().stream())
                 .filter(instance -> instance.getState().getName().equals("running"))

@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -17,4 +18,7 @@ import java.util.List;
 @AllArgsConstructor(staticName = "of")
 public class MemoryUtilization {
     private List<Datapoint> dataPoints=new ArrayList<>();
+    public void sort(){
+        dataPoints.sort(Comparator.comparing(Datapoint::getTimestamp));
+    }
 }

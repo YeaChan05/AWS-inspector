@@ -27,7 +27,7 @@ import java.util.List;
 public class CloudWatchController {
     private final Ec2Service ec2Service;
     @GetMapping("/dashboard")
-    public ResponseEntity<?> getInstanceStatus(@RequestParam(name = "id", required = false) String instanceId){
+    public ResponseEntity<?> getInstanceStatus(@RequestParam(name = "id") String instanceId){
         DashboardDto ec2Status = ec2Service.getEc2Status(instanceId);
         return ResponseEntity.status(HttpStatus.SC_OK).body(ec2Status);
     }
