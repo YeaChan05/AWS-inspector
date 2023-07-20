@@ -32,11 +32,18 @@ public class Ec2Service {
         AmazonCloudWatch amazonCloudWatch = awsConfig.cloudWatch();
         
         Optional<Instance> runningInstance = verifyRunningInstance(ec2, requestId);
+        
         DashboardDto dashboardDto = new DashboardDto();
         if (Objects.requireNonNull(runningInstance).isPresent()) {
+            Instance instance = runningInstance.get();
+            if(!instance.getMonitoring().getState().equals("enabled")){
+                MonitorInstancesRequest request = new MonitorInstancesRequest()
+                        .withInstanceIds(instance.getInstanceId());
+                ec2.monitorInstances(request);
+            }
             Dimension dimension = new Dimension()
                     .withName("InstanceId")
-                    .withValue(runningInstance.get().getInstanceId());
+                    .withValue(instance.getInstanceId());
             dashboardDto = DashboardDto.of(
                     getCPUCreditUsage(amazonCloudWatch, dimension),
                     getEc2CpuUtilization(amazonCloudWatch, dimension),
@@ -49,6 +56,7 @@ public class Ec2Service {
         dashboardDto.sort();
         return dashboardDto;
     }
+    
     
     private Optional<Instance> verifyRunningInstance(AmazonEC2 ec2, String requestId) {
         List<Reservation> reservations = ec2.describeInstances().getReservations();
