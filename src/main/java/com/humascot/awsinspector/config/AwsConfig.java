@@ -8,6 +8,8 @@ import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatchClientBuilder;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
+import com.amazonaws.services.logs.AWSLogs;
+import com.amazonaws.services.logs.AWSLogsClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import lombok.RequiredArgsConstructor;
@@ -50,6 +52,14 @@ public class AwsConfig {
     @Bean
     public AmazonCloudWatch cloudWatch(){
         return AmazonCloudWatchClientBuilder
+                .standard()
+                .withCredentials(new AWSStaticCredentialsProvider(credentials()))
+                .withRegion(Regions.AP_NORTHEAST_2)
+                .build();
+    }
+    @Bean
+    public AWSLogs awsLogs(){
+       return AWSLogsClientBuilder
                 .standard()
                 .withCredentials(new AWSStaticCredentialsProvider(credentials()))
                 .withRegion(Regions.AP_NORTHEAST_2)
