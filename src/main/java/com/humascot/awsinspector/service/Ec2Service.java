@@ -6,6 +6,7 @@ import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.*;
 import com.humascot.awsinspector.config.AwsConfig;
 import com.humascot.awsinspector.dto.datapoints.*;
+import com.humascot.awsinspector.dto.response.DashboardResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -27,13 +28,13 @@ public class Ec2Service {
     public static final String EC2_NAMESPACE = "AWS/EC2";
     public static final String LINUX_NAMESPACE = "System/Linux";
     
-    public DashboardDto getEc2Status(String requestId) {
+    public DashboardResponse getEc2Status(String requestId) {
         AmazonEC2 ec2 = awsConfig.ec2Client();
         AmazonCloudWatch amazonCloudWatch = awsConfig.cloudWatch();
         
         Optional<Instance> runningInstance = verifyRunningInstance(ec2, requestId);
         
-        DashboardDto dashboardDto = new DashboardDto();
+        DashboardResponse dashboardResponse = new DashboardResponse();
         if (Objects.requireNonNull(runningInstance).isPresent()) {
             Instance instance = runningInstance.get();
             if(!instance.getMonitoring().getState().equals("enabled")){
@@ -44,7 +45,7 @@ public class Ec2Service {
             Dimension dimension = new Dimension()
                     .withName("InstanceId")
                     .withValue(instance.getInstanceId());
-            dashboardDto = DashboardDto.of(
+            dashboardResponse = DashboardResponse.of(
                     getCPUCreditUsage(amazonCloudWatch, dimension),
                     getEc2CpuUtilization(amazonCloudWatch, dimension),
                     getMemoryUtilization(amazonCloudWatch, dimension),
@@ -53,8 +54,8 @@ public class Ec2Service {
                     getDiskReadBytes(amazonCloudWatch)
             );
         }
-        dashboardDto.sort();
-        return dashboardDto;
+        dashboardResponse.sort();
+        return dashboardResponse;
     }
     
     

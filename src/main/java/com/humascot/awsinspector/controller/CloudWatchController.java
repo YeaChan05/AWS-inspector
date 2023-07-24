@@ -1,7 +1,7 @@
 package com.humascot.awsinspector.controller;
 
 
-import com.humascot.awsinspector.dto.datapoints.DashboardDto;
+import com.humascot.awsinspector.dto.response.DashboardResponse;
 import com.humascot.awsinspector.service.Ec2Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +28,7 @@ public class CloudWatchController {
     private final Ec2Service ec2Service;
     @GetMapping("/dashboard")
     public ResponseEntity<?> getInstanceStatus(@RequestParam(name = "id") String instanceId){
-        DashboardDto ec2Status = ec2Service.getEc2Status(instanceId);
+        DashboardResponse ec2Status = ec2Service.getEc2Status(instanceId);
         return ResponseEntity.status(HttpStatus.SC_OK).body(ec2Status);
     }
     

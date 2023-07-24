@@ -1,6 +1,7 @@
-package com.humascot.awsinspector.dto.datapoints;
+package com.humascot.awsinspector.dto.response;
 
 import com.amazonaws.services.cloudwatch.model.MetricDataResult;
+import com.humascot.awsinspector.dto.datapoints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,14 +12,14 @@ import java.util.List;
 
 /**
  * package :  com.humascot.awsinspector.dto
- * fileName : DashboardDto
+ * fileName : DashboardResponse
  * author :  ShinYeaChan
  * date : 2023-07-11
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor(staticName = "of")
-public class DashboardDto {
+public class DashboardResponse {
     private Ec2CpuCreditUsage ec2CpuCreditUsage;
     private Ec2CpuUtilization ec2CpuUtilization;
     private MemoryUtilization memoryUtilization;
@@ -44,6 +45,6 @@ public class DashboardDto {
         memoryUtilization.sort();
         networkPacketsIn.sort();
         networkPacketsOut.sort();
-        metricData.sort(DashboardDto::compare);
+        metricData.sort(DashboardResponse::compare);
     }
 }
