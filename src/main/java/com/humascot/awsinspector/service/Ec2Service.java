@@ -51,7 +51,8 @@ public class Ec2Service {
                     getMemoryUtilization(amazonCloudWatch, dimension),
                     getNetworkPacketsIn(amazonCloudWatch, dimension),
                     getNetworkPacketsOut(amazonCloudWatch, dimension),
-                    getDiskReadBytes(amazonCloudWatch)
+                    getDiskReadBytes(amazonCloudWatch),
+                    VolumeInfo.of(instance.getBlockDeviceMappings())
             );
         }
         dashboardResponse.sort();
@@ -225,6 +226,7 @@ public class Ec2Service {
         }
         return null;
     }
+    
     //    private List<Instance> getRunningInstance(AmazonEC2 ec2) {
 //        List<Reservation> reservations = ec2.describeInstances().getReservations();
 //        return reservations.stream()

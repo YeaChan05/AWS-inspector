@@ -26,6 +26,7 @@ public class DashboardResponse {
     private NetworkPacketsIn networkPacketsIn;
     private NetworkPacketsOut networkPacketsOut;
     private List<MetricDataResult> metricData=new ArrayList<>();
+    private VolumeInfo volumeInfo;
     
     private static int compare(MetricDataResult o1, MetricDataResult o2) {
         List<Date> timestamps1 = o1.getTimestamps();
@@ -46,5 +47,6 @@ public class DashboardResponse {
         networkPacketsIn.sort();
         networkPacketsOut.sort();
         metricData.sort(DashboardResponse::compare);
+        volumeInfo.sort();
     }
 }
