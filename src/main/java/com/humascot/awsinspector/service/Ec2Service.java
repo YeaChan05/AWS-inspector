@@ -1,18 +1,27 @@
 package com.humascot.awsinspector.service;
 
 import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
+import com.amazonaws.services.cloudwatch.model.Dimension;
+import com.amazonaws.services.cloudwatch.model.Metric;
 import com.amazonaws.services.cloudwatch.model.*;
+import com.amazonaws.services.costexplorer.AWSCostExplorer;
+import com.amazonaws.services.costexplorer.model.*;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.*;
 import com.humascot.awsinspector.config.AwsConfig;
 import com.humascot.awsinspector.dto.datapoints.*;
 import com.humascot.awsinspector.dto.response.DashboardResponse;
+import com.humascot.awsinspector.service.utils.StringUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.amazonaws.services.costexplorer.model.Metric.*;
 
 /**
  * package :  com.humascot.awsinspector
@@ -27,6 +36,22 @@ public class Ec2Service {
     private final AwsConfig awsConfig;
     public static final String EC2_NAMESPACE = "AWS/EC2";
     public static final String LINUX_NAMESPACE = "System/Linux";
+    private static final String blendedCost = StringUtil.toPascalCase(BLENDED_COST.name());
+    private static final String unblendedCost = StringUtil.toPascalCase(UNBLENDED_COST.name());
+    private static final String amortizedCost = StringUtil.toPascalCase(AMORTIZED_COST.name());
+    private static final String netAmortizedCost = StringUtil.toPascalCase(NET_AMORTIZED_COST.name());
+    private static final String usageQuantity = StringUtil.toPascalCase(USAGE_QUANTITY.name());
+    private static final String normalizedUsageAmount = StringUtil.toPascalCase(NORMALIZED_USAGE_AMOUNT.name());
+    private static final String netUnblendedCost = StringUtil.toPascalCase(NET_UNBLENDED_COST.name());
+    
+    public static final List<String> metrics = Arrays.asList(
+            blendedCost,
+            unblendedCost,
+            amortizedCost,
+            netAmortizedCost,
+            usageQuantity,
+            normalizedUsageAmount,
+            netUnblendedCost);
     
     public DashboardResponse getEc2Status(String requestId) {
         AmazonEC2 ec2 = awsConfig.ec2Client();
@@ -82,6 +107,7 @@ public class Ec2Service {
     
     public GetMetricStatisticsRequest initMetricStatisticsRequest(String namespace, Dimension dimension, String metricName,
                                                                          Integer Period, Date startTime, Date endTime) {
+        
         return new GetMetricStatisticsRequest()
                 .withNamespace(namespace)
                 .withDimensions(dimension)
@@ -227,84 +253,100 @@ public class Ec2Service {
         return null;
     }
     
-    //    private List<Instance> getRunningInstance(AmazonEC2 ec2) {
-//        List<Reservation> reservations = ec2.describeInstances().getReservations();
-//        return reservations.stream()
-//                .flatMap(reservation -> reservation.getInstances()
-//                        .stream()
-//                        .filter()
-//                )
-//                .filter(instance -> instance.getMonitoring().getState().equals("enabled"))
-//                .collect(Collectors.toList());
-//    }
-//    public static void displayLatency(AmazonCloudWatch amazonCloudWatch) {
-//        try {
-//            Instant start = Instant.now().minus(Duration.ofMinutes(10));
-//            Instant endDate = Instant.now();
-//            String metricName = "Latency";
-//            String namespace = "AWS/EC2";
-//
-//            Metric metric =new Metric()
-//                    .withMetricName(metricName)
-//                    .withNamespace(namespace);
-//
-//            MetricStat metricStat = new MetricStat()
-//                    .withStat("Minimum")
-//                    .withPeriod(60)
-//                    .withMetric(metric);
-//
-//            MetricDataQuery dataQuery =new MetricDataQuery()
-//                    .withMetricStat(metricStat)
-//                    .withId("foo2")
-//                    .withReturnData(true);
-//
-//            List<MetricDataQuery> dataQueries = new ArrayList<>();
-//            dataQueries.add(dataQuery);
-//
-//            GetMetricDataRequest getMetricDataRequest = new GetMetricDataRequest()
-//                    .withMaxDatapoints(100)
-//                    .withStartTime(Date.from(start))
-//                    .withEndTime(Date.from(endDate))
-//                    .withMetricDataQueries(dataQueries);
-//
-//            GetMetricDataResult metricDataResult = amazonCloudWatch.getMetricData(getMetricDataRequest);
-//            List<MetricDataResult> metricDataResults = metricDataResult.getMetricDataResults();
-//
-//            for (MetricDataResult result : metricDataResults) {
-//                System.out.println("The label is " + result.getLabel());
-//                System.out.println("The status code is " + result.getStatusCode());
-//                System.out.println(result.getId());
-//                System.out.println(result.getTimestamps());
-//                System.out.println(result.getValues());
-//                System.out.println(result.getMessages());
-//            }
-//
-//        } catch (AmazonCloudWatchException e) {
-//            System.err.println(e.getMessage());
-//            System.exit(1);
-//        }
-//    }
-
-//    private void displayRdsCpuUtilization(AmazonCloudWatch amazonCloudWatch) {
-//        GetMetricStatisticsRequest rdsRequest = new GetMetricStatisticsRequest()
-//                .withNamespace("AWS/RDS")
-//                .withDimensions(new Dimension()
-//                        .withName("DBInstanceIdentifier")
-//                        .withValue(awsProfile.getRdsInstanceID()))
-//                .withMetricName("CPUUtilization")
-//                .withStatistics("Average")
-//                .withPeriod(60) // 통계의 간격 (초)
-//                .withStartTime(Date.from(Instant.now().minusSeconds(600))) // 10분 전부터
-//                .withEndTime(Date.from(Instant.now()));
-//
-//        GetMetricStatisticsResult rdsResult = amazonCloudWatch.getMetricStatistics(rdsRequest);
-//        List<Datapoint> rdsDataPoints = rdsResult.getDatapoints();
-//
-//        System.out.println("RDS CPU Utilization:");
-//        for (Datapoint dataPoint : rdsDataPoints) {
-//            System.out.println("Timestamp: " + dataPoint.getTimestamp());
-//            System.out.println("Average CPU Utilization: " + dataPoint.getAverage());
-//            System.out.println();
-//        }
-//    }
+    public List<InstanceStatusEvent> retrieveEC2Events(String instanceId) {
+        DescribeInstanceStatusRequest request = new DescribeInstanceStatusRequest();
+        DescribeInstanceStatusResult response = awsConfig.ec2Client().describeInstanceStatus(request);
+        
+        Instant currentTime = Instant.now();
+        Instant fiveSecondsAgo = currentTime.minusSeconds(5);
+    
+        return response.getInstanceStatuses().stream()
+                .filter(instanceStatus -> instanceStatus.getInstanceId().equals(instanceId))
+                .flatMap(instanceStatus -> instanceStatus.getEvents().stream())
+                .filter(event -> {
+                    Instant eventTime = event.getNotBefore().toInstant(); // 이벤트 시간
+                    return eventTime.isAfter(fiveSecondsAgo) && eventTime.isBefore(currentTime);
+                })
+                .collect(Collectors.toList());
+    }
+    
+    public void costExplorerMonthly() {
+        AWSCostExplorer awsCostExplorer = awsConfig.costExplorerClient();
+        
+        LocalDate endDate = LocalDate.now();
+        LocalDate startDate = endDate.minusDays(30);
+        
+        GetCostAndUsageRequest costAndUsageRequest = new GetCostAndUsageRequest()
+                .withTimePeriod(new DateInterval()
+                        .withStart(startDate.toString())
+                        .withEnd(endDate.toString()))
+                .withGranularity(Granularity.DAILY)
+                .withMetrics(metrics)
+                
+                .withFilter(new Expression()
+                        .withDimensions(new DimensionValues()
+                                .withKey("INSTANCE_TYPE")
+                                .withValues("t3a.micro")));
+        
+        // 비용 및 사용량 조회
+        GetCostAndUsageResult result = awsCostExplorer.getCostAndUsage(costAndUsageRequest);
+        
+        // 결과 출력
+        List<ResultByTime> results = result.getResultsByTime();
+        for (ResultByTime res : results) {
+            System.out.println("=======================================");
+            System.out.println(res.getTimePeriod().getStart());
+            System.out.println(res.getTimePeriod().getEnd());
+            System.out.println(convertResultData(res,blendedCost));
+            System.out.println(convertResultData(res,unblendedCost));
+            System.out.println(convertResultData(res,amortizedCost));
+            System.out.println(convertResultData(res,netAmortizedCost));
+            System.out.println(convertResultData(res,usageQuantity));
+            System.out.println(convertResultData(res,normalizedUsageAmount));
+            System.out.println(convertResultData(res,netUnblendedCost));
+        }
+    }
+    
+    public void costExplorerHourly() {
+        AWSCostExplorer awsCostExplorer = awsConfig.costExplorerClient();
+        
+        LocalDate endDate = LocalDate.now();
+        LocalDate startDate = endDate.minusDays(14);
+        
+        GetCostAndUsageRequest costAndUsageRequest = new GetCostAndUsageRequest()
+                .withTimePeriod(new DateInterval()
+                        .withStart(String.valueOf(startDate.atStartOfDay(ZoneId.of("UTC")).toInstant()))
+                        .withEnd(String.valueOf(endDate.atStartOfDay(ZoneId.of("UTC")).toInstant())))
+                .withGranularity(Granularity.HOURLY)
+                .withMetrics(metrics)
+                
+                .withFilter(new Expression()
+                        .withDimensions(new DimensionValues()
+                                .withKey("INSTANCE_TYPE")
+                                .withValues("t3a.micro")));
+        
+        // 비용 및 사용량 조회
+        GetCostAndUsageResult result = awsCostExplorer.getCostAndUsage(costAndUsageRequest);
+        
+        // 결과 출력
+        List<ResultByTime> results = result.getResultsByTime();
+        for (ResultByTime res : results) {
+            System.out.println("=======================================");
+            System.out.println(res.getTimePeriod().getStart());
+            System.out.println(res.getTimePeriod().getEnd());
+//            System.out.println(res);
+            System.out.println(convertResultData(res,blendedCost));
+            System.out.println(convertResultData(res,unblendedCost));
+            System.out.println(convertResultData(res,amortizedCost));
+            System.out.println(convertResultData(res,netAmortizedCost));
+            System.out.println(convertResultData(res,usageQuantity));
+            System.out.println(convertResultData(res,normalizedUsageAmount));
+            System.out.println(convertResultData(res,netUnblendedCost));
+        }
+    }
+    
+    private String convertResultData(ResultByTime res, String key){
+        return key+": "+res.getTotal().get(key).getAmount()+res.getTotal().get(key).getUnit();
+    }
+    
 }

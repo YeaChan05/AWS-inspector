@@ -6,6 +6,8 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatchClientBuilder;
+import com.amazonaws.services.costexplorer.AWSCostExplorer;
+import com.amazonaws.services.costexplorer.AWSCostExplorerClient;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.services.logs.AWSLogs;
@@ -61,6 +63,14 @@ public class AwsConfig {
     public AWSLogs awsLogs(){
        return AWSLogsClientBuilder
                 .standard()
+                .withCredentials(new AWSStaticCredentialsProvider(credentials()))
+                .withRegion(Regions.AP_NORTHEAST_2)
+                .build();
+    }
+    
+    @Bean
+    public AWSCostExplorer costExplorerClient(){
+        return AWSCostExplorerClient.builder()
                 .withCredentials(new AWSStaticCredentialsProvider(credentials()))
                 .withRegion(Regions.AP_NORTHEAST_2)
                 .build();
